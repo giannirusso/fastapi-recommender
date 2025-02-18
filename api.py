@@ -1,32 +1,34 @@
 from fastapi import FastAPI
 import numpy as np
-import uvicorn
+import pickle
+import scipy.sparse
 
 # Инициализируем FastAPI
 app = FastAPI()
 
-# Загружаем обученную модель ALS (уже обучена в твоём Colab)
-model = model  # Используем обученную модель
-interaction_matrix = interaction_sparse  # Матрица взаимодействий пользователей
+# Загружаем обученную модель ALS (должен быть файл `model.pkl` в проекте)
+try:
+    with open("model.pkl", "rb") as f:
+        model = pickle.load(f)
+    interaction_matrix = scipy.sparse.load_npz("interaction_matrix.npz")
+except Exception as e:
+    print(f"Ошибка загрузки модели: {e}")
+    model = None
+    interaction_matrix = None
 
-# Обработчик запроса на рекомендации
+# Эндпоинт для получения рекомендаций
 @app.get("/recommend/{visitorid}")
 def get_recommendations(visitorid: int, N: int = 5):
-    try:
-        if visitorid not in range(interaction_matrix.shape[0]):
-            return {"error": "Пользователь не найден"}
+    if model is None or interaction_matrix is None:
+        return {"error": "Модель не загружена"}
 
-        # Получаем рекомендации
-        recommended_items = model.recommend(visitorid, interaction_matrix[visitorid], N=N)
+    if visitorid not in range(interaction_matrix.shape[0]):
+        return {"error": "Пользователь не найден"}
 
-        # Формируем список рекомендаций
-        recommendations = [{"categoryid": int(item[0]), "score": float(item[1])} for item in recommended_items]
+    # Получаем рекомендации
+    recommended_items = model.recommend(visitorid, interaction_matrix[visitorid], N=N)
 
-        return {"visitorid": visitorid, "recommendations": recommendations}
+    # Формируем список рекомендаций
+    recommendations = [{"categoryid": int(item[0]), "score": float(item[1])} for item in recommended_items]
 
-    except Exception as e:
-        return {"error": str(e)}
-
-# Запускаем сервер (для локального запуска)
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    return {"visitorid": visitorid, "recommendations": recommendations}
