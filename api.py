@@ -13,19 +13,24 @@ app = FastAPI()
 
 # Загружаем обученную модель ALS (должен быть файл `model.pkl` в проекте)
 try:
-    print("Загрузка модели ALS...")
+    print("🔄 Загрузка модели ALS...")
     with open("model.pkl", "rb") as f:
         model = pickle.load(f)
-    interaction_matrix = scipy.sparse.load_npz("interaction_matrix.npz")
     
-    if model is None or interaction_matrix is None:
-        raise ValueError("Ошибка: model или interaction_matrix загрузились как None!")
+    print("🔄 Загрузка interaction_matrix...")
+    interaction_matrix = scipy.sparse.load_npz("interaction_matrix.npz")
+
+    if model is None:
+        raise ValueError("❌ Ошибка: model загрузилась как None!")
+    if interaction_matrix is None:
+        raise ValueError("❌ Ошибка: interaction_matrix загрузилась как None!")
         
-    print("Модель успешно загружена!")
+    print("✅ Модель и матрица загружены успешно!")
 except Exception as e:
-    print(f"Ошибка загрузки модели: {e}")
+    print(f"❌ Ошибка загрузки модели: {e}")
     model = None
     interaction_matrix = None
+
 
 
 # Эндпоинт для получения рекомендаций
