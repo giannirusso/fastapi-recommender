@@ -1,3 +1,4 @@
+import traceback
 from fastapi import FastAPI
 import numpy as np
 import pickle
@@ -19,16 +20,19 @@ except Exception as e:
 # Эндпоинт для получения рекомендаций
 @app.get("/recommend/{visitorid}")
 def get_recommendations(visitorid: int, N: int = 5):
-    if model is None or interaction_matrix is None:
-        return {"error": "Модель не загружена"}
+    try:
+        if model is None or interaction_matrix is None:
+            return {"error": "Модель не загружена"}
 
-    if visitorid not in range(interaction_matrix.shape[0]):
-        return {"error": "Пользователь не найден"}
+        if visitorid not in range(interaction_matrix.shape[0]):
+            return {"error": "Пользователь не найден"}
 
-    # Получаем рекомендации
-    recommended_items = model.recommend(visitorid, interaction_matrix[visitorid], N=N)
+        recommended_items = model.recommend(visitorid, interaction_matrix[visitorid], N=N)
 
-    # Формируем список рекомендаций
-    recommendations = [{"categoryid": int(item[0]), "score": float(item[1])} for item in recommended_items]
+        recommendations = [{"categoryid": int(item[0]), "score": float(item[1])} for item in recommended_items]
 
-    return {"visitorid": visitorid, "recommendations": recommendations}
+        return {"visitorid": visitorid, "recommendations": recommendations}
+
+    except Exception as e:
+        error_message = traceback.format_exc()
+        return {"error": "Внутренняя ошибка сервера", "details": error_message}
